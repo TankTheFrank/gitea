@@ -578,6 +578,17 @@ func parseToken(authorization string) (*models.User, *models.Repository, string,
 			return nil, nil, "basic", fmt.Errorf("Basic auth invalid")
 		}
 		user, password := cs[:i], cs[i+1:]
+		if password == "x-oauth-basic" {
+			t, err := models.GetAccessTokenBySHA(user)
+			// on error assume that this is indeed the password and move on
+			if err == nil {
+				u, err := models.GetUserByID(t.UID)
+				if err != nil {
+					return nil, nil, "basic", err
+				}
+				return u, nil, "basic", nil
+			}
+		}
 		u, err := models.GetUserByName(user)
 		if err != nil {
 			return nil, nil, "basic", err
